@@ -1,6 +1,7 @@
 # Build output
 bin/
 obj/
+TelegramChannelPostsExporter.exe
 
 # IDE files
 .idea/
