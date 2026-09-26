@@ -1,3 +1,7 @@
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+
 # Build output
 bin/
 obj/
