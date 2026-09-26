@@ -1,6 +1,6 @@
 # Telegram Channel Posts Exporter
 
-A .NET 10 command-line application that collects posts from a public Telegram channel and saves them as a JSON file. Posts can be filtered by an inclusive UTC date range. Optionally, post images are downloaded and embedded in the JSON as Base64 data URLs.
+A .NET 10 command-line application that collects posts from a public Telegram channel and saves them as a JSON file. No API key required. Posts can be filtered by an inclusive UTC date range. Optionally, post images are downloaded and embedded in the JSON as Base64 data URLs.
 
 ## Requirements
 
