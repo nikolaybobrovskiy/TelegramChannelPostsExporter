@@ -1,0 +1,14 @@
+# Build output
+bin/
+obj/
+
+# IDE files
+.idea/
+.vs/
+*.user
+*.suo
+
+# Test and coverage output
+TestResults/
+*.coverage
+*.coveragexml
