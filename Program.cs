@@ -251,8 +251,8 @@ class Program
 		Console.WriteLine("Arguments:");
 		Console.WriteLine("  --help, -h, -?, /?, ?        Show this help and exit");
 		Console.WriteLine("  --channel, --username <name> Telegram channel username (required)");
-		Console.WriteLine("  --start, --startDate <date>  Start date, inclusive (yyyy-MM-dd HH:mm:ss; default: 2 days ago UTC)");
-		Console.WriteLine("  --end, --endDate <date>      End date, inclusive (yyyy-MM-dd HH:mm:ss; default: current UTC time)");
+		Console.WriteLine("  --start, --startDate <date>  Start date (UTC), inclusive (yyyy-MM-dd HH:mm:ss; default: 2 days ago UTC)");
+		Console.WriteLine("  --end, --endDate <date>      End date (UTC), inclusive (yyyy-MM-dd HH:mm:ss; default: current UTC time)");
 		Console.WriteLine("  --output, --outfile <file>   Output JSON file path (required)");
 		Console.WriteLine("  --saveImages <true|false>    Download post images as Base64 (default: false)");
 		Console.WriteLine();

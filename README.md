@@ -37,13 +37,13 @@ Example:
 
 Run with `--help` to print usage information.
 
-| Argument                        | Description |
-|---------------------------------| --- |
-| `--channel`, `--username`       | Public Telegram channel username. Required. |
-| `--output`, `--outfile`         | Path to the output JSON file. Required. |
-| `--start`, `--startDate`        | Inclusive start date in `yyyy-MM-dd HH:mm:ss` format. Defaults to two days before the current UTC time. |
-| `--end`, `--endDate`            | Inclusive end date in `yyyy-MM-dd HH:mm:ss` format. Defaults to the current UTC time. |
-| `--saveImages <true or false>`  | Download post images and embed them as Base64 data URLs. Defaults to `false`. |
-| `--help`, `-h`, `-?`, `/?`, `?` | Print usage information and exit. |
+| Argument                        | Description                                                                                                   |
+|---------------------------------|---------------------------------------------------------------------------------------------------------------|
+| `--channel`, `--username`       | Public Telegram channel username. Required.                                                                   |
+| `--output`, `--outfile`         | Path to the output JSON file. Required.                                                                       |
+| `--start`, `--startDate`        | Inclusive start date in `yyyy-MM-dd HH:mm:ss` format (UTC). Defaults to two days before the current UTC time. |
+| `--end`, `--endDate`            | Inclusive end date in `yyyy-MM-dd HH:mm:ss` format (UTC). Defaults to the current UTC time.                   |
+| `--saveImages <true or false>`  | Download post images and embed them as Base64 data URLs. Defaults to `false`.                                 |
+| `--help`, `-h`, `-?`, `/?`, `?` | Print usage information and exit.                                                                             |
 
 The JSON output is an array of posts containing their ID, date, text, and optional image data URL.
