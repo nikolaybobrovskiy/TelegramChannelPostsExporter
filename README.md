@@ -32,7 +32,7 @@ The executable targets Windows x64. `publish.cmd` runs the same publish command.
 Example:
 
 ```powershell
-.\TelegramChannelPostsExporter.exe --channel headlines_for_traders --start "2026-09-24 00:00:00" --end "2026-09-26 12:00:00" --output posts.json --saveimages true
+.\TelegramChannelPostsExporter.exe --channel headlines_for_traders --start "2026-09-24 00:00:00" --end "2026-09-26 12:00:00" --output posts.json --saveImages true
 ```
 
 Run with `--help` to print usage information.
