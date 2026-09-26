@@ -15,12 +15,14 @@ class Program
 {
 	static async Task Main(string[] args)
 	{
-		// === НАСТРОЙКИ ФИЛЬТРАЦИИ И ИМПОРТА ===
-		var channelUsername = "headlines_for_traders";
-		var startDate = DateTime.UtcNow.AddDays(-2); // От (Включая)
-		var endDate = DateTime.UtcNow; // До (Включая)
-		var outputFile = "channel_posts_base64.json";
-		var saveImages = false;
+		// === НАСТРОЙЙКИ ИЗ КОМАНДНОЙ СТРОКИ ===
+		var options = ParseArgs(args);
+		ValidateArgs(options);
+		var channelUsername = options.ChannelUsername!;
+		var startDate = options.StartDate ?? DateTime.UtcNow.AddDays(-2);
+		var endDate = options.EndDate ?? DateTime.UtcNow;
+		var outputFile = options.OutputFile!;
+		var saveImages = options.SaveImages ?? false;
 		// ======================================
 
 		using var httpClient = new HttpClient();
@@ -183,18 +185,89 @@ class Program
 			Console.WriteLine("\nПостов за указанный период времени не обнаружено.");
 		}
 	}
-}
 
-public class TelegramPost
-{
-	public int Id { get; set; }
+	private static ProgramArgs ParseArgs(string[] args)
+	{
+		var result = new ProgramArgs();
+		for (int i = 0; i < args.Length; i++)
+		{
+			var arg = args[i];
+			if (arg.StartsWith("--", StringComparison.Ordinal))
+			{
+				var key = arg[2..].ToLowerInvariant();
+				string? value = null;
+				if (i + 1 < args.Length && !args[i + 1].StartsWith("--", StringComparison.Ordinal))
+				{
+					value = args[++i];
+				}
 
-	public DateTime Date { get; set; }
+				switch (key)
+				{
+					case "channel" or "username":
+						result.ChannelUsername = value;
+						break;
+					case "start" or "startdate":
+						if (DateTime.TryParseExact(value, "yyyy-MM-dd HH:mm:ss", null, System.Globalization.DateTimeStyles.None, out var start))
+						{
+							result.StartDate = start;
+						}
+						break;
+					case "end" or "enddate":
+						if (DateTime.TryParseExact(value, "yyyy-MM-dd HH:mm:ss", null, System.Globalization.DateTimeStyles.None, out var end))
+						{
+							result.EndDate = end;
+						}
+						break;
+					case "output" or "outfile":
+						result.OutputFile = value;
+						break;
+					case "saveimages":
+						if (bool.TryParse(value, out var save))
+						{
+							result.SaveImages = save;
+						}
+						break;
+				}
+			}
+		}
+		return result;
+	}
 
-	public string? Text { get; set; }
+	private static void ValidateArgs(ProgramArgs options)
+	{
+		if (string.IsNullOrEmpty(options.ChannelUsername))
+		{
+			Console.WriteLine("Ошибка: Необходимо указать имя канала (--channel)");
+			Environment.Exit(1);
+		}
 
-	[System.Text.Json.Serialization.JsonIgnore]
-	public string? ImageUrl { get; set; }
+		if (string.IsNullOrEmpty(options.OutputFile))
+		{
+			Console.WriteLine("Ошибка: Необходимо указать выходной файл (--output)");
+			Environment.Exit(1);
+		}
+	}
 
-	public string? ImageDataUrl { get; set; } // Готовая строка data:image/jpeg;base64,...
+	public class TelegramPost
+	{
+		public int Id { get; set; }
+
+		public DateTime Date { get; set; }
+
+		public string? Text { get; set; }
+
+		[System.Text.Json.Serialization.JsonIgnore]
+		public string? ImageUrl { get; set; }
+
+		public string? ImageDataUrl { get; set; } // Готовая строка data:image/jpeg;base64,...
+	}
+
+	private class ProgramArgs
+	{
+		public string? ChannelUsername { get; set; }
+		public DateTime? StartDate { get; set; }
+		public DateTime? EndDate { get; set; }
+		public string? OutputFile { get; set; }
+		public bool? SaveImages { get; set; }
+	}
 }
