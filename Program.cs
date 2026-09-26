@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -180,7 +181,8 @@ class Program
 				Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
 			};
 
-			var jsonOutput = JsonSerializer.Serialize(finalResult, jsonOptions);
+			var jsonContext = new ExportJsonContext(jsonOptions);
+			var jsonOutput = JsonSerializer.Serialize(finalResult, jsonContext.ListTelegramPost);
 			await File.WriteAllTextAsync(outputFile, jsonOutput);
 
 			Console.WriteLine($"\nSuccess! Exported {finalResult.Count} posts.");
@@ -295,4 +297,9 @@ class Program
 		public string? OutputFile { get; set; }
 		public bool? SaveImages { get; set; }
 	}
+}
+
+[JsonSerializable(typeof(List<Program.TelegramPost>))]
+internal partial class ExportJsonContext : JsonSerializerContext
+{
 }
