@@ -15,7 +15,7 @@ class Program
 {
 	static async Task Main(string[] args)
 	{
-		// === НАСТРОЙЙКИ ИЗ КОМАНДНОЙ СТРОКИ ===
+		// === COMMAND-LINE SETTINGS ===
 		var options = ParseArgs(args);
 		ValidateArgs(options);
 		var channelUsername = options.ChannelUsername!;
@@ -33,8 +33,8 @@ class Program
 		var keepScrolling = true;
 		var currentOffsetId = 0;
 
-		Console.WriteLine($"Запуск сбора постов для канала @{channelUsername}");
-		Console.WriteLine($"Интервал: с {startDate:yyyy-MM-dd HH:mm:ss} по {endDate:yyyy-MM-dd HH:mm:ss}\n");
+		Console.WriteLine($"Starting post collection for channel @{channelUsername}");
+		Console.WriteLine($"Date range: {startDate:yyyy-MM-dd HH:mm:ss} to {endDate:yyyy-MM-dd HH:mm:ss}\n");
 
 		while (keepScrolling)
 		{
@@ -54,7 +54,7 @@ class Program
 
 				if (messageNodes == null || messageNodes.Count == 0)
 				{
-					Console.WriteLine("Посты больше не найдены.");
+					Console.WriteLine("No more posts found.");
 					break;
 				}
 
@@ -73,7 +73,7 @@ class Program
 					var imageUrl = string.Empty;
 					if (saveImages)
 					{
-						// Ищем обертку фотографии поста
+						// Find the post's photo wrapper.
 						var photoNode = node.SelectSingleNode(".//a[contains(@class, 'tgme_widget_message_photo_wrap')]");
 
 						if (photoNode != null)
@@ -102,32 +102,32 @@ class Program
 
 				if (pagePosts.Count == 0) break;
 
-				// Сортируем от новых к старым для правильной работы пагинации назад
+				// Sort newest to oldest to paginate backward correctly.
 				pagePosts = pagePosts.OrderByDescending(p => p.Id).ToList();
 
 				var matches = pagePosts.Where(p => p.Date >= startDate && p.Date <= endDate).ToList();
 
 				foreach (var post in matches)
 				{
-					// Если у поста обнаружена ссылка на изображение, конвертируем в Base64
+					// Convert the image URL to Base64 when one is available.
 					if (!string.IsNullOrEmpty(post.ImageUrl))
 					{
 						try
 						{
-							Console.WriteLine($"Загрузка и кодирование изображения для поста #{post.Id}...");
+							Console.WriteLine($"Downloading and encoding the image for post #{post.Id}...");
 
-							// Скачиваем байты картинки напрямую в память
+							// Download the image bytes directly into memory.
 							var imageBytes = await httpClient.GetByteArrayAsync(post.ImageUrl);
 
-							// Преобразуем байты в строку Base64
+							// Convert the bytes to a Base64 string.
 							var base64String = Convert.ToBase64String(imageBytes);
 
-							// Формируем валидный Data URL (Telegram всегда отдает превью в jpg)
+							// Build a data URL (Telegram serves the preview as a JPEG).
 							post.ImageDataUrl = $"data:image/jpeg;base64,{base64String}";
 						}
 						catch (Exception imgEx)
 						{
-							Console.WriteLine($"Ошибка конвертации изображения для поста #{post.Id}: {imgEx.Message}");
+							Console.WriteLine($"Failed to convert the image for post #{post.Id}: {imgEx.Message}");
 						}
 					}
 					allFilteredPosts.Add(post);
@@ -135,14 +135,14 @@ class Program
 
 				if (matches.Count > 0)
 				{
-					Console.WriteLine($"Обработано {matches.Count} постов на странице (Всего в буфере: {allFilteredPosts.Count})");
+					Console.WriteLine($"Processed {matches.Count} posts on this page (total collected: {allFilteredPosts.Count}).");
 				}
 
 				var oldestPostOnPage = pagePosts.Last();
 
 				if (oldestPostOnPage.Date < startDate)
 				{
-					Console.WriteLine("\nДостигнута дата ниже лимита. Завершение сбора.");
+					Console.WriteLine("\nReached a post older than the date limit. Stopping collection.");
 					keepScrolling = false;
 				}
 				else
@@ -151,21 +151,21 @@ class Program
 					if (currentOffsetId == oldestPostOnPage.Id) break;
 					currentOffsetId = oldestPostOnPage.Id;
 
-					// Пауза между запросами страниц для предотвращения бана со стороны Telegram
+					// Pause between page requests to reduce the risk of being rate-limited by Telegram.
 					await Task.Delay(2000);
 				}
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine($"Ошибка парсинга: {ex.Message}");
+				Console.WriteLine($"Parsing error: {ex.Message}");
 				break;
 			}
 		}
 
-		// Запись результирующего JSON
+		// Write the resulting JSON.
 		if (allFilteredPosts.Count > 0)
 		{
-			// Сортируем по возрастанию ID для хронологического порядка в JSON
+			// Sort by ascending ID to keep the JSON in chronological order.
 			var finalResult = allFilteredPosts.OrderBy(p => p.Id).ToList();
 
 			var jsonOptions = new JsonSerializerOptions
@@ -177,12 +177,12 @@ class Program
 			var jsonOutput = JsonSerializer.Serialize(finalResult, jsonOptions);
 			await File.WriteAllTextAsync(outputFile, jsonOutput);
 
-			Console.WriteLine($"\nУспешно! Экспортировано {finalResult.Count} постов.");
-			Console.WriteLine($"Итоговый JSON сохранен в: {Path.GetFullPath(outputFile)}");
+			Console.WriteLine($"\nSuccess! Exported {finalResult.Count} posts.");
+			Console.WriteLine($"JSON saved to: {Path.GetFullPath(outputFile)}");
 		}
 		else
 		{
-			Console.WriteLine("\nПостов за указанный период времени не обнаружено.");
+			Console.WriteLine("\nNo posts were found in the specified date range.");
 		}
 	}
 
@@ -237,13 +237,13 @@ class Program
 	{
 		if (string.IsNullOrEmpty(options.ChannelUsername))
 		{
-			Console.WriteLine("Ошибка: Необходимо указать имя канала (--channel)");
+			Console.WriteLine("Error: Specify a channel username with --channel.");
 			Environment.Exit(1);
 		}
 
 		if (string.IsNullOrEmpty(options.OutputFile))
 		{
-			Console.WriteLine("Ошибка: Необходимо указать выходной файл (--output)");
+			Console.WriteLine("Error: Specify an output file with --output.");
 			Environment.Exit(1);
 		}
 	}
@@ -259,7 +259,7 @@ class Program
 		[System.Text.Json.Serialization.JsonIgnore]
 		public string? ImageUrl { get; set; }
 
-		public string? ImageDataUrl { get; set; } // Готовая строка data:image/jpeg;base64,...
+		public string? ImageDataUrl { get; set; } // Complete data:image/jpeg;base64,... string.
 	}
 
 	private class ProgramArgs
