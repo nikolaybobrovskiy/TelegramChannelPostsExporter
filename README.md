@@ -2,6 +2,8 @@
 
 A .NET 10 command-line application that collects posts from a public Telegram channel and saves them as a JSON file. No API key required. Posts can be filtered by an inclusive UTC date range. Optionally, post images are downloaded and embedded in the JSON as Base64 data URLs.
 
+Transient network and file I/O failures are retried up to three times with exponential backoff.
+
 ## Requirements
 
 - To build: .NET 10 SDK

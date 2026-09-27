@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -11,6 +12,8 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using HtmlAgilityPack;
+using Polly;
+using Polly.Retry;
 
 class Program
 {
@@ -34,6 +37,7 @@ class Program
 
 		using var httpClient = new HttpClient();
 		httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+		var ioRetryPipeline = CreateIoRetryPipeline();
 
 		var allFilteredPosts = new List<TelegramPost>();
 		var currentBeforeId = string.Empty;
@@ -53,7 +57,11 @@ class Program
 
 			try
 			{
-				var html = await httpClient.GetStringAsync(url);
+				var html = string.Empty;
+				await ioRetryPipeline.ExecuteAsync(async cancellationToken =>
+				{
+					html = await httpClient.GetStringAsync(url, cancellationToken);
+				});
 				var htmlDoc = new HtmlDocument();
 				htmlDoc.LoadHtml(html);
 
@@ -124,7 +132,11 @@ class Program
 							Console.WriteLine($"Downloading and encoding the image for post #{post.Id}...");
 
 							// Download the image bytes directly into memory.
-							var imageBytes = await httpClient.GetByteArrayAsync(post.ImageUrl);
+							var imageBytes = Array.Empty<byte>();
+							await ioRetryPipeline.ExecuteAsync(async cancellationToken =>
+							{
+								imageBytes = await httpClient.GetByteArrayAsync(post.ImageUrl, cancellationToken);
+							});
 
 							// Convert the bytes to a Base64 string.
 							var base64String = Convert.ToBase64String(imageBytes);
@@ -183,7 +195,10 @@ class Program
 
 			var jsonContext = new ExportJsonContext(jsonOptions);
 			var jsonOutput = JsonSerializer.Serialize(finalResult, jsonContext.ListTelegramPost);
-			await File.WriteAllTextAsync(outputFile, jsonOutput);
+			await ioRetryPipeline.ExecuteAsync(async cancellationToken =>
+			{
+				await File.WriteAllTextAsync(outputFile, jsonOutput, cancellationToken);
+			});
 
 			Console.WriteLine($"\nSuccess! Exported {finalResult.Count} posts.");
 			Console.WriteLine($"JSON saved to: {Path.GetFullPath(outputFile)}");
@@ -239,6 +254,38 @@ class Program
 			}
 		}
 		return result;
+	}
+
+	private static ResiliencePipeline CreateIoRetryPipeline()
+	{
+		return new ResiliencePipelineBuilder()
+			.AddRetry(new RetryStrategyOptions
+			{
+				ShouldHandle = new PredicateBuilder()
+					.Handle<IOException>()
+					.Handle<TaskCanceledException>()
+					.Handle<HttpRequestException>(IsTransientHttpException),
+				MaxRetryAttempts = 3,
+				Delay = TimeSpan.FromSeconds(1),
+				MaxDelay = TimeSpan.FromSeconds(8),
+				BackoffType = DelayBackoffType.Exponential,
+				UseJitter = true,
+				OnRetry = args =>
+				{
+					Console.WriteLine($"Transient I/O failure. Retrying (attempt {args.AttemptNumber}).");
+					return default;
+				}
+			})
+			.Build();
+	}
+
+	private static bool IsTransientHttpException(HttpRequestException exception)
+	{
+		var statusCode = exception.StatusCode;
+		return statusCode is null
+			|| statusCode == HttpStatusCode.RequestTimeout
+			|| statusCode == HttpStatusCode.TooManyRequests
+			|| (int)statusCode.Value >= 500;
 	}
 
 	private static void PrintUsage()
